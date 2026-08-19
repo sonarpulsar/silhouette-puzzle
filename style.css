@@ -67,6 +67,66 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .card b { font-size: 1.2rem; }
 .card span { color: var(--muted); }
 
+/* Control page: puzzle grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.puzzle {
+  background: var(--panel);
+  border: 3px solid #2a2f3a;
+  border-radius: 14px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.puzzle img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+}
+.puzzle span { font-size: 0.85rem; text-align: center; line-height: 1.2; }
+.puzzle.sel { border-color: var(--accent); }
+
+.controlbar {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(transparent, var(--bg) 30%);
+  padding-top: 12px;
+}
+.controlbar .btn { padding: 20px; margin: 8px 0; }
+
+.hidden { display: none !important; }
+
+/* Display page: puzzle view */
+.puzzleview { justify-content: flex-start; padding-top: 4vh; }
+.puzzle-name { font-size: 2.5rem; font-weight: 700; margin-bottom: 3vh; }
+.panels {
+  display: flex;
+  gap: 4vw;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+.panels figure { margin: 0; text-align: center; }
+.panels img, .panels canvas {
+  width: 38vw;
+  max-width: 520px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 12px;
+}
+.panels figcaption { color: var(--muted); margin-top: 12px; font-size: 1.1rem; }
+
 /* Display page */
 .stage {
   display: flex;

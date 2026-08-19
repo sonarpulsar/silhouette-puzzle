@@ -8,21 +8,46 @@
 </head>
 <body>
   <div class="wrap">
-    <h1><span id="status-dot"></span>Curator Control</h1>
-    <p class="sub">Phase 1 test: each button lights up the projector screen.</p>
+    <h1><span id="status-dot"></span>Choose a puzzle</h1>
+    <p class="sub">Tap a puzzle, then press <b>Launch</b> to show it on the projector.</p>
 
-    <button class="btn primary" onclick="ch.send('launch')">▶ Launch puzzle</button>
-    <button class="btn" onclick="ch.send('capture')">📸 Capture</button>
-    <button class="btn" onclick="ch.send('next')">⏭ Next</button>
-    <button class="btn" onclick="ch.send('recalibrate')">🎯 Recalibrate floor</button>
+    <div id="grid" class="grid"></div>
+
+    <div class="controlbar">
+      <button class="btn primary" id="launchBtn" disabled onclick="launch()">▶ Launch</button>
+      <button class="btn" onclick="ch.send('capture')">📸 Capture</button>
+      <button class="btn" onclick="ch.send('next')">⏭ Next</button>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+  <script src="puzzles.js"></script>
   <script src="shared.js"></script>
   <script>
-    // Control page only SENDS, so no onMessage handler needed.
     const ch = connectChannel();
+    let selected = null;
+
+    const grid = document.getElementById("grid");
+    const launchBtn = document.getElementById("launchBtn");
+
+    PUZZLES.forEach((pz) => {
+      const cell = document.createElement("button");
+      cell.className = "puzzle";
+      cell.innerHTML = `<img src="${pz.file}" alt="${pz.name}" /><span>${pz.name}</span>`;
+      cell.onclick = () => {
+        selected = pz;
+        document.querySelectorAll(".puzzle").forEach((el) => el.classList.remove("sel"));
+        cell.classList.add("sel");
+        launchBtn.disabled = false;
+      };
+      grid.appendChild(cell);
+    });
+
+    function launch() {
+      if (!selected) return;
+      ch.send("launch", { file: selected.file, name: selected.name });
+    }
   </script>
 </body>
 </html>

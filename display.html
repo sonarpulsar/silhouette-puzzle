@@ -7,26 +7,65 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="stage">
+  <!-- Idle screen -->
+  <div class="stage" id="idle">
     <div class="label"><span id="status-dot"></span>Projector display</div>
-    <div class="big" id="state">Waiting…</div>
+    <div class="big">Waiting for a puzzle…</div>
+  </div>
+
+  <!-- Puzzle screen (hidden until launched) -->
+  <div class="stage puzzleview hidden" id="puzzleview">
+    <div class="puzzle-name" id="pzName"></div>
+    <div class="panels">
+      <figure>
+        <img id="pzColor" alt="colour puzzle" />
+        <figcaption>Colour</figcaption>
+      </figure>
+      <figure>
+        <canvas id="pzSil"></canvas>
+        <figcaption>Silhouette — build this with your bodies!</figcaption>
+      </figure>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="shared.js"></script>
+  <script src="silhouette.js"></script>
   <script>
-    const stateEl = document.getElementById("state");
+    const idle = document.getElementById("idle");
+    const puzzleview = document.getElementById("puzzleview");
+    const pzName = document.getElementById("pzName");
+    const pzColor = document.getElementById("pzColor");
+    const pzSil = document.getElementById("pzSil");
 
-    // Display page LISTENS for messages from the tablet.
+    async function showPuzzle(file, name) {
+      pzName.textContent = name;
+      pzColor.src = file;
+
+      const img = await loadImage(file);
+      const sil = makeSilhouette(img, { color: [0, 0, 0] });
+      pzSil.width = sil.width;
+      pzSil.height = sil.height;
+      const ctx = pzSil.getContext("2d");
+      // white background behind the black silhouette
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, pzSil.width, pzSil.height);
+      ctx.drawImage(sil, 0, 0);
+
+      idle.classList.add("hidden");
+      puzzleview.classList.remove("hidden");
+    }
+
+    function goIdle() {
+      puzzleview.classList.add("hidden");
+      idle.classList.remove("hidden");
+    }
+
     connectChannel((payload) => {
-      const labels = {
-        launch: "▶ Puzzle launched",
-        capture: "📸 Captured!",
-        next: "⏭ Next",
-        recalibrate: "🎯 Recalibrating floor",
-      };
-      stateEl.textContent = labels[payload.action] || payload.action;
+      if (payload.action === "launch") showPuzzle(payload.file, payload.name);
+      else if (payload.action === "next") goIdle();
+      // 'capture' / 'recalibrate' handled in later phases
     });
   </script>
 </body>
