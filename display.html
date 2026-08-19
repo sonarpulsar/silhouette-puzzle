@@ -7,65 +7,226 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Idle screen -->
-  <div class="stage" id="idle">
+  <!-- ============ IDLE ============ -->
+  <div class="stage screen" id="idle">
     <div class="label"><span id="status-dot"></span>Projector display</div>
     <div class="big">Waiting for a puzzle…</div>
+    <button class="mini-btn" onclick="openSetup()">⚙ Setup camera</button>
+    <div class="hint" id="idleHint"></div>
   </div>
 
-  <!-- Puzzle screen (hidden until launched) -->
-  <div class="stage puzzleview hidden" id="puzzleview">
-    <div class="puzzle-name" id="pzName"></div>
-    <div class="panels">
-      <figure>
-        <img id="pzColor" alt="colour puzzle" />
-        <figcaption>Colour</figcaption>
-      </figure>
-      <figure>
-        <canvas id="pzSil"></canvas>
-        <figcaption>Silhouette — build this with your bodies!</figcaption>
-      </figure>
+  <!-- ============ SETUP / CALIBRATION ============ -->
+  <div class="stage screen hidden" id="setup">
+    <h2 class="setup-title">Camera setup</h2>
+    <p class="sub">Drag the box over the 3×3 m floor area. Use the corner to resize.</p>
+
+    <div class="calib-stage" id="calibStage">
+      <video id="calVideo" playsinline muted></video>
+      <div class="crop-box" id="cropBox"><div class="handle" id="cropHandle"></div></div>
     </div>
+
+    <div class="setup-controls">
+      <button class="mini-btn" onclick="toggleFlip()">↔ Flip: <span id="flipState">off</span></button>
+      <button class="mini-btn" onclick="rotate90()">⟳ Rotate: <span id="rotState">0°</span></button>
+      <button class="mini-btn" onclick="grabBackground()">📷 Capture empty floor</button>
+      <button class="mini-btn primary" onclick="closeSetup()">✓ Save &amp; close</button>
+    </div>
+    <div class="hint" id="setupHint"></div>
+  </div>
+
+  <!-- ============ TASK (live feed + ghost silhouette) ============ -->
+  <div class="stage screen hidden" id="task">
+    <div class="task-name" id="taskName"></div>
+    <div class="task-canvas-wrap">
+      <canvas id="taskCanvas" width="720" height="720"></canvas>
+      <img class="ref-thumb" id="refThumb" alt="target" />
+    </div>
+    <div class="hint">Arrange your bodies to fill the ghost shape — curator presses Capture when ready.</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="shared.js"></script>
   <script src="silhouette.js"></script>
+  <script src="camera.js"></script>
   <script>
-    const idle = document.getElementById("idle");
-    const puzzleview = document.getElementById("puzzleview");
-    const pzName = document.getElementById("pzName");
-    const pzColor = document.getElementById("pzColor");
-    const pzSil = document.getElementById("pzSil");
+    const screens = {
+      idle: document.getElementById("idle"),
+      setup: document.getElementById("setup"),
+      task: document.getElementById("task"),
+    };
+    function show(name) {
+      Object.values(screens).forEach((s) => s.classList.add("hidden"));
+      screens[name].classList.remove("hidden");
+    }
 
-    async function showPuzzle(file, name) {
-      pzName.textContent = name;
-      pzColor.src = file;
+    const idleHint = document.getElementById("idleHint");
+    idleHint.textContent = CAMERA.hasBackground()
+      ? "Camera calibrated ✓"
+      : "Not yet calibrated — press Setup camera before the show.";
 
+    // ---------- SETUP SCREEN ----------
+    const calVideo = document.getElementById("calVideo");
+    const calibStage = document.getElementById("calibStage");
+    const cropBox = document.getElementById("cropBox");
+    const cropHandle = document.getElementById("cropHandle");
+    const setupHint = document.getElementById("setupHint");
+
+    async function openSetup() {
+      show("setup");
+      setupHint.textContent = "Starting camera…";
+      try {
+        await CAMERA.ensure(calVideo);
+        setupHint.textContent = "";
+        layoutBox();
+        refreshToggleLabels();
+      } catch (e) {
+        setupHint.textContent =
+          "⚠ Could not open the camera: " + e.message +
+          ". Check the C270 is plugged in and click Allow on the camera prompt.";
+      }
+    }
+
+    function closeSetup() {
+      saveCalib(CAMERA.calib);
+      idleHint.textContent = CAMERA.hasBackground()
+        ? "Camera calibrated ✓"
+        : "Calibrated (crop saved). Tip: also Capture empty floor.";
+      show("idle");
+    }
+
+    function toggleFlip() {
+      CAMERA.calib.flipH = !CAMERA.calib.flipH;
+      saveCalib(CAMERA.calib);
+      refreshToggleLabels();
+    }
+    function rotate90() {
+      CAMERA.calib.rotate = (CAMERA.calib.rotate + 90) % 360;
+      saveCalib(CAMERA.calib);
+      refreshToggleLabels();
+    }
+    function refreshToggleLabels() {
+      document.getElementById("flipState").textContent = CAMERA.calib.flipH ? "on" : "off";
+      document.getElementById("rotState").textContent = CAMERA.calib.rotate + "°";
+    }
+    function grabBackground() {
+      const url = CAMERA.captureBackground();
+      setupHint.textContent = url ? "Empty floor captured ✓" : "Camera not ready yet.";
+    }
+
+    // Position the crop box from calib fractions over the displayed video.
+    function layoutBox() {
+      const w = calibStage.clientWidth;
+      const h = calibStage.clientHeight;
+      if (!h) return;
+      const sizePx = CAMERA.calib.sizeFrac * h;
+      cropBox.style.width = sizePx + "px";
+      cropBox.style.height = sizePx + "px";
+      cropBox.style.left = CAMERA.calib.xFrac * w - sizePx / 2 + "px";
+      cropBox.style.top = CAMERA.calib.yFrac * h - sizePx / 2 + "px";
+    }
+    window.addEventListener("resize", () => {
+      if (!screens.setup.classList.contains("hidden")) layoutBox();
+    });
+
+    // Drag to move / resize the crop box.
+    let drag = null;
+    cropBox.addEventListener("pointerdown", (e) => {
+      if (e.target === cropHandle) return;
+      drag = { mode: "move", startX: e.clientX, startY: e.clientY, c: { ...CAMERA.calib } };
+      cropBox.setPointerCapture(e.pointerId);
+    });
+    cropHandle.addEventListener("pointerdown", (e) => {
+      drag = { mode: "resize", startX: e.clientX, startY: e.clientY, c: { ...CAMERA.calib } };
+      cropHandle.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+    });
+    document.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const w = calibStage.clientWidth, h = calibStage.clientHeight;
+      if (drag.mode === "move") {
+        CAMERA.calib.xFrac = clamp(drag.c.xFrac + (e.clientX - drag.startX) / w, 0, 1);
+        CAMERA.calib.yFrac = clamp(drag.c.yFrac + (e.clientY - drag.startY) / h, 0, 1);
+      } else {
+        const delta = (e.clientY - drag.startY) / h;
+        CAMERA.calib.sizeFrac = clamp(drag.c.sizeFrac + delta * 2, 0.15, 1);
+      }
+      layoutBox();
+    });
+    document.addEventListener("pointerup", () => {
+      if (drag) { saveCalib(CAMERA.calib); drag = null; }
+    });
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+    // ---------- TASK SCREEN ----------
+    const taskCanvas = document.getElementById("taskCanvas");
+    const taskName = document.getElementById("taskName");
+    const refThumb = document.getElementById("refThumb");
+    let current = null; // { file, name, silCanvas }
+    let taskLoop = null;
+    const GHOST_ALPHA = 0.4;
+
+    async function startTask(file, name) {
+      taskName.textContent = name;
+      refThumb.src = file;
       const img = await loadImage(file);
-      const sil = makeSilhouette(img, { color: [0, 0, 0] });
-      pzSil.width = sil.width;
-      pzSil.height = sil.height;
-      const ctx = pzSil.getContext("2d");
-      // white background behind the black silhouette
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, pzSil.width, pzSil.height);
-      ctx.drawImage(sil, 0, 0);
+      current = { file, name, silCanvas: makeSilhouette(img, { color: [0, 0, 0] }) };
 
-      idle.classList.add("hidden");
-      puzzleview.classList.remove("hidden");
+      show("task");
+      try {
+        await CAMERA.ensure(document.createElement("video")); // ensure stream exists
+      } catch (e) {
+        taskName.textContent = name + "  (camera unavailable — run Setup)";
+      }
+      runTaskLoop();
     }
 
-    function goIdle() {
-      puzzleview.classList.add("hidden");
-      idle.classList.remove("hidden");
+    function runTaskLoop() {
+      cancelAnimationFrame(taskLoop);
+      const size = taskCanvas.width;
+      const ctx = taskCanvas.getContext("2d");
+      const frame = () => {
+        const ok = CAMERA.draw(taskCanvas, size);
+        if (!ok) {
+          ctx.fillStyle = "#111";
+          ctx.fillRect(0, 0, size, size);
+        }
+        if (current) {
+          ctx.globalAlpha = GHOST_ALPHA;
+          ctx.drawImage(current.silCanvas, 0, 0, size, size);
+          ctx.globalAlpha = 1;
+        }
+        taskLoop = requestAnimationFrame(frame);
+      };
+      frame();
+    }
+    function stopTask() {
+      cancelAnimationFrame(taskLoop);
+      taskLoop = null;
     }
 
+    // ---------- REALTIME CONTROL ----------
     connectChannel((payload) => {
-      if (payload.action === "launch") showPuzzle(payload.file, payload.name);
-      else if (payload.action === "next") goIdle();
-      // 'capture' / 'recalibrate' handled in later phases
+      switch (payload.action) {
+        case "launch":
+          startTask(payload.file, payload.name);
+          break;
+        case "next":
+          stopTask();
+          show("idle");
+          break;
+        case "recalibrate": {
+          const url = CAMERA.captureBackground();
+          idleHint.textContent = url ? "Empty floor re-captured ✓" : "Start the camera first (Setup).";
+          break;
+        }
+        // 'capture' handled in Phase 4
+      }
+    });
+
+    // Keyboard shortcut on the projector: press "c" to open Setup.
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "c" && screens.idle && !screens.idle.classList.contains("hidden")) openSetup();
     });
   </script>
 </body>
