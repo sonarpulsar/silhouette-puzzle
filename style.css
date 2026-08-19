@@ -1,0 +1,80 @@
+:root {
+  --bg: #0f1115;
+  --panel: #1a1d24;
+  --accent: #4f8cff;
+  --text: #f2f4f8;
+  --muted: #8b93a3;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 24px; }
+
+/* Connection indicator */
+#status-dot {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #d9534f;   /* red = not connected */
+  vertical-align: middle;
+  margin-right: 8px;
+}
+#status-dot.online { background: #5cb85c; }  /* green = connected */
+
+/* Control page big buttons (tablet-friendly) */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 28px;
+  margin: 14px 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid #2a2f3a;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.btn:active { transform: scale(0.99); }
+.btn.primary { background: var(--accent); border-color: var(--accent); }
+
+/* Landing links */
+.card {
+  display: block;
+  padding: 20px;
+  margin: 12px 0;
+  background: var(--panel);
+  border: 1px solid #2a2f3a;
+  border-radius: 14px;
+  color: var(--text);
+  text-decoration: none;
+}
+.card b { font-size: 1.2rem; }
+.card span { color: var(--muted); }
+
+/* Display page */
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+}
+.stage .big { font-size: 4rem; font-weight: 700; }
+.stage .label { color: var(--muted); font-size: 1.2rem; letter-spacing: 2px; text-transform: uppercase; }

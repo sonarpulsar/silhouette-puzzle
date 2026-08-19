@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Control — Silhouette Puzzle</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1><span id="status-dot"></span>Curator Control</h1>
+    <p class="sub">Phase 1 test: each button lights up the projector screen.</p>
+
+    <button class="btn primary" onclick="ch.send('launch')">▶ Launch puzzle</button>
+    <button class="btn" onclick="ch.send('capture')">📸 Capture</button>
+    <button class="btn" onclick="ch.send('next')">⏭ Next</button>
+    <button class="btn" onclick="ch.send('recalibrate')">🎯 Recalibrate floor</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <script>
+    // Control page only SENDS, so no onMessage handler needed.
+    const ch = connectChannel();
+  </script>
+</body>
+</html>

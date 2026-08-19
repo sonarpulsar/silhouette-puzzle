@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Display — Silhouette Puzzle</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="stage">
+    <div class="label"><span id="status-dot"></span>Projector display</div>
+    <div class="big" id="state">Waiting…</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <script>
+    const stateEl = document.getElementById("state");
+
+    // Display page LISTENS for messages from the tablet.
+    connectChannel((payload) => {
+      const labels = {
+        launch: "▶ Puzzle launched",
+        capture: "📸 Captured!",
+        next: "⏭ Next",
+        recalibrate: "🎯 Recalibrating floor",
+      };
+      stateEl.textContent = labels[payload.action] || payload.action;
+    });
+  </script>
+</body>
+</html>
