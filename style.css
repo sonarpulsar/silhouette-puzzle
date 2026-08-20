@@ -168,6 +168,44 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .setup-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .setup-controls .mini-btn { margin-top: 0; }
 
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.slider-row label { color: var(--muted); }
+.slider-row input[type="range"] { width: 220px; }
+.slider-row .mini-btn { margin-top: 0; }
+.preview-canvas {
+  margin-top: 14px;
+  width: 260px;
+  height: 260px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+/* Result screen: 2x2 grid */
+#result { justify-content: flex-start; padding-top: 2vh; }
+.result-title { font-size: 2.2rem; font-weight: 700; margin-bottom: 2vh; }
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2vh 2vw;
+  justify-items: center;
+}
+.result-grid figure { margin: 0; text-align: center; }
+.result-grid img, .result-grid canvas {
+  width: min(40vh, 42vw);
+  height: min(40vh, 42vw);
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+}
+.result-grid figcaption { color: var(--muted); margin-top: 8px; font-size: 1rem; }
+
 /* Task screen */
 #task { justify-content: flex-start; padding-top: 3vh; }
 .task-name { font-size: 2.4rem; font-weight: 700; margin-bottom: 2vh; }

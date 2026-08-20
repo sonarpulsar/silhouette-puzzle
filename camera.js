@@ -4,7 +4,7 @@
 function defaultCalib() {
   // Fractions are resolution-independent (0..1).
   // sizeFrac is a fraction of the video HEIGHT (the square's side).
-  return { xFrac: 0.5, yFrac: 0.5, sizeFrac: 0.8, flipH: false, rotate: 0 };
+  return { xFrac: 0.5, yFrac: 0.5, sizeFrac: 0.8, flipH: false, rotate: 0, threshold: 45 };
 }
 
 function loadCalib() {

@@ -31,7 +31,24 @@
       <button class="mini-btn" onclick="grabBackground()">📷 Capture empty floor</button>
       <button class="mini-btn primary" onclick="closeSetup()">✓ Save &amp; close</button>
     </div>
+    <div class="slider-row">
+      <label>Sensitivity <span id="thVal"></span></label>
+      <input type="range" id="thSlider" min="15" max="100" step="1" oninput="setThreshold(this.value)" />
+      <button class="mini-btn" onclick="testCapture()">👁 Preview silhouette</button>
+    </div>
     <div class="hint" id="setupHint"></div>
+    <canvas id="previewCanvas" class="preview-canvas hidden" width="360" height="360"></canvas>
+  </div>
+
+  <!-- ============ RESULT (4 panels) ============ -->
+  <div class="stage screen hidden" id="result">
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-grid">
+      <figure><img id="rColor" alt="colour" /><figcaption>The puzzle</figcaption></figure>
+      <figure><canvas id="rPuzzleSil"></canvas><figcaption>Puzzle silhouette</figcaption></figure>
+      <figure><canvas id="rRaw"></canvas><figcaption>Your bodies</figcaption></figure>
+      <figure><canvas id="rBodySil"></canvas><figcaption>Your silhouette</figcaption></figure>
+    </div>
   </div>
 
   <!-- ============ TASK (live feed + ghost silhouette) ============ -->
@@ -49,12 +66,15 @@
   <script src="shared.js"></script>
   <script src="silhouette.js"></script>
   <script src="camera.js"></script>
+  <script src="processing.js"></script>
   <script>
     const screens = {
       idle: document.getElementById("idle"),
       setup: document.getElementById("setup"),
       task: document.getElementById("task"),
+      result: document.getElementById("result"),
     };
+    const SIZE = 720; // processing resolution
     function show(name) {
       Object.values(screens).forEach((s) => s.classList.add("hidden"));
       screens[name].classList.remove("hidden");
@@ -108,10 +128,30 @@
     function refreshToggleLabels() {
       document.getElementById("flipState").textContent = CAMERA.calib.flipH ? "on" : "off";
       document.getElementById("rotState").textContent = CAMERA.calib.rotate + "°";
+      const th = CAMERA.calib.threshold;
+      document.getElementById("thSlider").value = th;
+      document.getElementById("thVal").textContent = th;
     }
     function grabBackground() {
-      const url = CAMERA.captureBackground();
+      const url = CAMERA.captureBackground(SIZE);
       setupHint.textContent = url ? "Empty floor captured ✓" : "Camera not ready yet.";
+    }
+    function setThreshold(v) {
+      CAMERA.calib.threshold = Number(v);
+      document.getElementById("thVal").textContent = v;
+      saveCalib(CAMERA.calib);
+    }
+    // Live preview of the silhouette while tuning sensitivity (needs a background + a person on the floor).
+    const previewCanvas = document.getElementById("previewCanvas");
+    async function testCapture() {
+      const frame = document.createElement("canvas");
+      if (!CAMERA.draw(frame, SIZE)) { setupHint.textContent = "Camera not ready."; return; }
+      const bg = await loadBackground(SIZE);
+      if (!bg) { setupHint.textContent = "Capture the empty floor first."; return; }
+      const sil = makeBodySilhouette(frame, bg, { threshold: CAMERA.calib.threshold, blur: 4 });
+      previewCanvas.classList.remove("hidden");
+      previewCanvas.getContext("2d").drawImage(sil, 0, 0, previewCanvas.width, previewCanvas.height);
+      setupHint.textContent = "Adjust sensitivity so only bodies are black. Higher = less sensitive.";
     }
 
     // Position the crop box from calib fractions over the displayed video.
@@ -205,22 +245,69 @@
       taskLoop = null;
     }
 
+    // ---------- CAPTURE + RESULT ----------
+    let lastResult = null; // stashed for Phase 5 (saving)
+
+    async function doCapture() {
+      if (!current) return;
+      const raw = document.createElement("canvas");
+      if (!CAMERA.draw(raw, SIZE)) {
+        taskName.textContent = current.name + "  (camera not ready)";
+        return;
+      }
+      stopTask();
+
+      // Puzzle silhouette on white (for the result panel + saving).
+      const puzzleSil = document.createElement("canvas");
+      puzzleSil.width = puzzleSil.height = SIZE;
+      const pctx = puzzleSil.getContext("2d");
+      pctx.fillStyle = "#fff";
+      pctx.fillRect(0, 0, SIZE, SIZE);
+      pctx.drawImage(current.silCanvas, 0, 0, SIZE, SIZE);
+
+      // Body silhouette via background subtraction.
+      const bg = await loadBackground(SIZE);
+      const bodySil = bg
+        ? makeBodySilhouette(raw, bg, { threshold: CAMERA.calib.threshold, blur: 4 })
+        : blankWhite(SIZE);
+
+      lastResult = { name: current.name, colorFile: current.file, puzzleSil, raw, bodySil };
+      showResult(lastResult);
+    }
+
+    function drawInto(id, canvas) {
+      const el = document.getElementById(id);
+      el.width = SIZE;
+      el.height = SIZE;
+      el.getContext("2d").drawImage(canvas, 0, 0);
+    }
+    function showResult(r) {
+      document.getElementById("resultTitle").textContent = r.name;
+      document.getElementById("rColor").src = r.colorFile;
+      drawInto("rPuzzleSil", r.puzzleSil);
+      drawInto("rRaw", r.raw);
+      drawInto("rBodySil", r.bodySil);
+      show("result");
+    }
+
     // ---------- REALTIME CONTROL ----------
     connectChannel((payload) => {
       switch (payload.action) {
         case "launch":
           startTask(payload.file, payload.name);
           break;
+        case "capture":
+          doCapture();
+          break;
         case "next":
           stopTask();
           show("idle");
           break;
         case "recalibrate": {
-          const url = CAMERA.captureBackground();
+          const url = CAMERA.captureBackground(SIZE);
           idleHint.textContent = url ? "Empty floor re-captured ✓" : "Start the camera first (Setup).";
           break;
         }
-        // 'capture' handled in Phase 4
       }
     });
 
