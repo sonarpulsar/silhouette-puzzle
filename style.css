@@ -127,6 +127,33 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 }
 .panels figcaption { color: var(--muted); margin-top: 12px; font-size: 1.1rem; }
 
+/* Gallery */
+.gal-card {
+  background: var(--panel);
+  border: 1px solid #2a2f3a;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.gal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.gal-head b { font-size: 1.2rem; }
+.gal-head span { color: var(--muted); font-size: 0.9rem; }
+.gal-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.gal-row figure { margin: 0; text-align: center; }
+.gal-row img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+}
+.gal-row figcaption { color: var(--muted); font-size: 0.8rem; margin-top: 6px; }
+@media (max-width: 560px) { .gal-row { grid-template-columns: repeat(2, 1fr); } }
+
 /* Small buttons on the display (setup/idle) */
 .mini-btn {
   margin-top: 20px;

@@ -9,7 +9,49 @@
 <body>
   <div class="wrap">
     <h1>Gallery</h1>
-    <p class="sub">Saved creations will appear here in a later phase.</p>
+    <p class="sub" id="galSub">Loading…</p>
+    <div id="gallery"></div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <script>
+    const gallery = document.getElementById("gallery");
+    const galSub = document.getElementById("galSub");
+
+    async function load() {
+      const { data, error } = await supabaseClient
+        .from("captures")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        galSub.textContent = "⚠ Could not load: " + error.message;
+        return;
+      }
+      if (!data.length) {
+        galSub.textContent = "No creations saved yet.";
+        return;
+      }
+      galSub.textContent = data.length + " creation" + (data.length > 1 ? "s" : "");
+
+      data.forEach((c) => {
+        const when = new Date(c.created_at).toLocaleString();
+        const card = document.createElement("div");
+        card.className = "gal-card";
+        card.innerHTML = `
+          <div class="gal-head"><b>${c.puzzle_name || "Untitled"}</b><span>${when}</span></div>
+          <div class="gal-row">
+            <figure><img src="${c.color_url}" /><figcaption>Puzzle</figcaption></figure>
+            <figure><img src="${c.puzzle_sil_url}" /><figcaption>Puzzle silhouette</figcaption></figure>
+            <figure><img src="${c.body_raw_url}" /><figcaption>Bodies</figcaption></figure>
+            <figure><img src="${c.body_sil_url}" /><figcaption>Body silhouette</figcaption></figure>
+          </div>`;
+        gallery.appendChild(card);
+      });
+    }
+    load();
+  </script>
 </body>
 </html>

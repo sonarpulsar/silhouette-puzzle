@@ -49,6 +49,7 @@
       <figure><canvas id="rRaw"></canvas><figcaption>Your bodies</figcaption></figure>
       <figure><canvas id="rBodySil"></canvas><figcaption>Your silhouette</figcaption></figure>
     </div>
+    <div class="hint" id="saveStatus"></div>
   </div>
 
   <!-- ============ TASK (live feed + ghost silhouette) ============ -->
@@ -67,6 +68,7 @@
   <script src="silhouette.js"></script>
   <script src="camera.js"></script>
   <script src="processing.js"></script>
+  <script src="save.js"></script>
   <script>
     const screens = {
       idle: document.getElementById("idle"),
@@ -273,6 +275,16 @@
 
       lastResult = { name: current.name, colorFile: current.file, puzzleSil, raw, bodySil };
       showResult(lastResult);
+
+      // Save to Supabase (non-blocking).
+      const saveStatus = document.getElementById("saveStatus");
+      saveStatus.textContent = "Saving to gallery…";
+      saveResult(lastResult)
+        .then(() => { saveStatus.textContent = "Saved to gallery ✓"; })
+        .catch((e) => {
+          saveStatus.textContent = "⚠ Save failed: " + e.message;
+          console.error(e);
+        });
     }
 
     function drawInto(id, canvas) {
