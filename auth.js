@@ -20,8 +20,9 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    #auth-overlay { position: fixed; inset: 0; z-index: 99999;
-      background: #0f1115; display: flex; align-items: center; justify-content: center; }
+    #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 99999; background: #0f1115;
+      display: flex; align-items: center; justify-content: center; }
     #auth-form { text-align: center; font-family: system-ui, sans-serif; color: #f2f4f8; }
     .auth-title { font-size: 1.4rem; margin-bottom: 16px; }
     #auth-input { font-size: 1.2rem; padding: 12px 14px; border-radius: 10px;
