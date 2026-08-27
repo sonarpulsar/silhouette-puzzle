@@ -34,10 +34,11 @@
     <div class="slider-row">
       <label>Sensitivity <span id="thVal"></span></label>
       <input type="range" id="thSlider" min="15" max="100" step="1" oninput="setThreshold(this.value)" />
-      <button class="mini-btn" onclick="testCapture()">👁 Preview silhouette</button>
+      <button class="mini-btn" onclick="togglePreviewMode()">View: <span id="previewModeLabel">live</span></button>
     </div>
     <div class="hint" id="setupHint"></div>
-    <canvas id="previewCanvas" class="preview-canvas hidden" width="360" height="360"></canvas>
+    <div class="preview-label" id="previewLabel">Output preview — what the audience sees (flip &amp; rotate apply here)</div>
+    <canvas id="calPreview" class="preview-canvas" width="360" height="360"></canvas>
   </div>
 
   <!-- ============ RESULT (4 panels) ============ -->
@@ -102,6 +103,7 @@
         setupHint.textContent = "";
         layoutBox();
         refreshToggleLabels();
+        startPreviewLoop();
       } catch (e) {
         setupHint.textContent =
           "⚠ Could not open the camera: " + e.message +
@@ -110,6 +112,7 @@
     }
 
     function closeSetup() {
+      stopPreviewLoop();
       saveCalib(CAMERA.calib);
       idleHint.textContent = CAMERA.hasBackground()
         ? "Camera calibrated ✓"
@@ -134,26 +137,66 @@
       document.getElementById("thSlider").value = th;
       document.getElementById("thVal").textContent = th;
     }
-    function grabBackground() {
+    async function grabBackground() {
       const url = CAMERA.captureBackground(SIZE);
       setupHint.textContent = url ? "Empty floor captured ✓" : "Camera not ready yet.";
+      if (url) previewBg = await loadBackground(SIZE); // refresh for silhouette preview
     }
     function setThreshold(v) {
       CAMERA.calib.threshold = Number(v);
       document.getElementById("thVal").textContent = v;
       saveCalib(CAMERA.calib);
     }
-    // Live preview of the silhouette while tuning sensitivity (needs a background + a person on the floor).
-    const previewCanvas = document.getElementById("previewCanvas");
-    async function testCapture() {
-      const frame = document.createElement("canvas");
-      if (!CAMERA.draw(frame, SIZE)) { setupHint.textContent = "Camera not ready."; return; }
-      const bg = await loadBackground(SIZE);
-      if (!bg) { setupHint.textContent = "Capture the empty floor first."; return; }
-      const sil = makeBodySilhouette(frame, bg, { threshold: CAMERA.calib.threshold, blur: 4 });
-      previewCanvas.classList.remove("hidden");
-      previewCanvas.getContext("2d").drawImage(sil, 0, 0, previewCanvas.width, previewCanvas.height);
-      setupHint.textContent = "Adjust sensitivity so only bodies are black. Higher = less sensitive.";
+    // Live output preview: shows the calibrated (cropped/flipped/rotated) feed in real time,
+    // so Flip and Rotate visibly take effect here. Toggle to a live silhouette for tuning.
+    const calPreview = document.getElementById("calPreview");
+    let previewMode = "output"; // 'output' | 'silhouette'
+    let previewLoop = null;
+    let previewBg = null;
+
+    function startPreviewLoop() {
+      cancelAnimationFrame(previewLoop);
+      const P = calPreview.width;
+      const ctx = calPreview.getContext("2d");
+      const step = () => {
+        if (previewMode === "silhouette" && previewBg) {
+          const frame = document.createElement("canvas");
+          if (CAMERA.draw(frame, SIZE)) {
+            const sil = makeBodySilhouette(frame, previewBg, {
+              threshold: CAMERA.calib.threshold, blur: 4,
+            });
+            ctx.drawImage(sil, 0, 0, P, P);
+          }
+        } else {
+          CAMERA.draw(calPreview, P);
+        }
+        previewLoop = requestAnimationFrame(step);
+      };
+      step();
+    }
+    function stopPreviewLoop() {
+      cancelAnimationFrame(previewLoop);
+      previewLoop = null;
+    }
+    async function togglePreviewMode() {
+      if (previewMode === "output") {
+        previewBg = await loadBackground(SIZE);
+        if (!previewBg) {
+          setupHint.textContent = "Capture the empty floor first to preview the silhouette.";
+          return;
+        }
+        previewMode = "silhouette";
+        setupHint.textContent = "Silhouette preview: adjust Sensitivity so only bodies are black.";
+      } else {
+        previewMode = "output";
+        setupHint.textContent = "";
+      }
+      document.getElementById("previewModeLabel").textContent =
+        previewMode === "output" ? "live" : "silhouette";
+      document.getElementById("previewLabel").textContent =
+        previewMode === "output"
+          ? "Output preview — what the audience sees (flip & rotate apply here)"
+          : "Silhouette preview — stand on the floor and tune Sensitivity";
     }
 
     // Position the crop box from calib fractions over the displayed video.

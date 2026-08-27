@@ -206,8 +206,9 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .slider-row label { color: var(--muted); }
 .slider-row input[type="range"] { width: 220px; }
 .slider-row .mini-btn { margin-top: 0; }
+.preview-label { color: var(--muted); font-size: 0.9rem; margin-top: 14px; text-align: center; }
 .preview-canvas {
-  margin-top: 14px;
+  margin-top: 8px;
   width: 260px;
   height: 260px;
   background: #fff;
