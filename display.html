@@ -63,6 +63,17 @@
     <div class="hint">Arrange your bodies to fill the ghost shape — curator presses Capture when ready.</div>
   </div>
 
+  <!-- ============ QR codes (always visible, both edges) ============ -->
+  <div class="qr-badge qr-left">
+    <div class="qr-box" id="qrLeft"></div>
+    <div class="qr-cap">Scan to open gallery</div>
+  </div>
+  <div class="qr-badge qr-right">
+    <div class="qr-box" id="qrRight"></div>
+    <div class="qr-cap">Scan to open gallery</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="auth.js"></script>
@@ -378,6 +389,21 @@
     window.addEventListener("keydown", (e) => {
       if (e.key === "c" && screens.idle && !screens.idle.classList.contains("hidden")) openSetup();
     });
+
+    // ---------- QR codes to the gallery (both edges, always on) ----------
+    (function () {
+      try {
+        const url = location.origin + "/gallery.html";
+        const qr = qrcode(0, "M");
+        qr.addData(url);
+        qr.make();
+        const tag = qr.createImgTag(6, 0); // self-contained data-URI image
+        document.getElementById("qrLeft").innerHTML = tag;
+        document.getElementById("qrRight").innerHTML = tag;
+      } catch (e) {
+        console.error("QR generation failed:", e);
+      }
+    })();
   </script>
 </body>
 </html>
