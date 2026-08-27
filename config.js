@@ -13,4 +13,4 @@ const CHANNEL_NAME = "installation";
 
 // Password for the Control + Display (projector) pages. The Gallery stays open.
 // CHANGE THIS to your own word. (It's a deterrent, not hard security.)
-const APP_PASSWORD = "change-me";
+const APP_PASSWORD = "andra";
