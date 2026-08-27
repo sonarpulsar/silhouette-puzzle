@@ -127,6 +127,49 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 }
 .panels figcaption { color: var(--muted); margin-top: 12px; font-size: 1.1rem; }
 
+/* Control: link button + gallery admin */
+.link-btn {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid #2a2f3a;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.admin-row img {
+  width: 60px; height: 60px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 6px;
+  flex: none;
+}
+.admin-meta { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.admin-meta b { font-size: 1rem; }
+.admin-meta span { color: var(--muted); font-size: 0.8rem; }
+.del-btn {
+  flex: none;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: #fff;
+  background: #d9534f;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.del-btn:disabled { opacity: 0.6; }
+
 /* Gallery */
 .gal-card {
   background: var(--panel);

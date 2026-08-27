@@ -10,3 +10,7 @@ const SUPABASE_ANON_KEY =
 // The realtime "room" the tablet and projector share.
 // You can leave this as-is.
 const CHANNEL_NAME = "installation";
+
+// Password for the Control + Display (projector) pages. The Gallery stays open.
+// CHANGE THIS to your own word. (It's a deterrent, not hard security.)
+const APP_PASSWORD = "change-me";

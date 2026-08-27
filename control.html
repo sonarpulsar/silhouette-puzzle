@@ -8,20 +8,33 @@
 </head>
 <body>
   <div class="wrap">
-    <h1><span id="status-dot"></span>Choose a puzzle</h1>
-    <p class="sub">Tap a puzzle, then press <b>Launch</b> to show it on the projector.</p>
+    <!-- ===== Puzzle chooser ===== -->
+    <div id="chooser">
+      <h1><span id="status-dot"></span>Choose a puzzle
+        <button class="link-btn" onclick="openAdmin()">Manage gallery</button>
+      </h1>
+      <p class="sub">Tap a puzzle, then press <b>Launch</b> to show it on the projector.</p>
+      <div id="grid" class="grid"></div>
+      <div class="controlbar">
+        <button class="btn primary" id="launchBtn" disabled onclick="launch()">▶ Launch</button>
+        <button class="btn" onclick="ch.send('capture')">📸 Capture</button>
+        <button class="btn" onclick="ch.send('next')">⏭ Next</button>
+      </div>
+    </div>
 
-    <div id="grid" class="grid"></div>
-
-    <div class="controlbar">
-      <button class="btn primary" id="launchBtn" disabled onclick="launch()">▶ Launch</button>
-      <button class="btn" onclick="ch.send('capture')">📸 Capture</button>
-      <button class="btn" onclick="ch.send('next')">⏭ Next</button>
+    <!-- ===== Gallery admin ===== -->
+    <div id="admin" class="hidden">
+      <h1>Manage gallery
+        <button class="link-btn" onclick="closeAdmin()">← Back to puzzles</button>
+      </h1>
+      <p class="sub" id="adminSub">Loading…</p>
+      <div id="adminList"></div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script src="puzzles.js"></script>
   <script src="shared.js"></script>
   <script>
@@ -47,6 +60,62 @@
     function launch() {
       if (!selected) return;
       ch.send("launch", { file: selected.file, name: selected.name });
+    }
+
+    // ---------- Gallery admin ----------
+    const chooser = document.getElementById("chooser");
+    const admin = document.getElementById("admin");
+    const adminList = document.getElementById("adminList");
+    const adminSub = document.getElementById("adminSub");
+
+    function openAdmin() { chooser.classList.add("hidden"); admin.classList.remove("hidden"); loadAdmin(); }
+    function closeAdmin() { admin.classList.add("hidden"); chooser.classList.remove("hidden"); }
+
+    // Extract the storage path ("folder/file.png") from a public URL.
+    function pathFromUrl(u) {
+      const m = "/captures/";
+      const i = u ? u.indexOf(m) : -1;
+      return i >= 0 ? u.slice(i + m.length) : null;
+    }
+
+    async function loadAdmin() {
+      adminList.innerHTML = "";
+      adminSub.textContent = "Loading…";
+      const { data, error } = await supabaseClient
+        .from("captures").select("*").order("created_at", { ascending: false });
+      if (error) { adminSub.textContent = "⚠ " + error.message; return; }
+      if (!data.length) { adminSub.textContent = "Gallery is empty."; return; }
+      adminSub.textContent = data.length + " item" + (data.length > 1 ? "s" : "");
+
+      data.forEach((c) => {
+        const when = new Date(c.created_at).toLocaleString();
+        const row = document.createElement("div");
+        row.className = "admin-row";
+        row.innerHTML = `
+          <img src="${c.color_url}" />
+          <img src="${c.body_sil_url}" />
+          <div class="admin-meta"><b>${c.puzzle_name || "Untitled"}</b><span>${when}</span></div>
+          <button class="del-btn">🗑 Delete</button>`;
+        row.querySelector(".del-btn").onclick = () => deleteCapture(c, row);
+        adminList.appendChild(row);
+      });
+    }
+
+    async function deleteCapture(c, row) {
+      if (!confirm("Delete this creation permanently?")) return;
+      const btn = row.querySelector(".del-btn");
+      btn.disabled = true; btn.textContent = "Deleting…";
+      try {
+        const paths = [c.color_url, c.puzzle_sil_url, c.body_raw_url, c.body_sil_url]
+          .map(pathFromUrl).filter(Boolean);
+        if (paths.length) await supabaseClient.storage.from("captures").remove(paths);
+        const { error } = await supabaseClient.from("captures").delete().eq("id", c.id);
+        if (error) throw error;
+        row.remove();
+      } catch (e) {
+        btn.disabled = false; btn.textContent = "🗑 Delete";
+        alert("Delete failed: " + e.message);
+      }
     }
   </script>
 </body>
