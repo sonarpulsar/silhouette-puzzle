@@ -319,8 +319,15 @@
       lastResult = { name: current.name, colorFile: current.file, puzzleSil, raw, bodySil };
       showResult(lastResult);
 
-      // Save to Supabase (non-blocking).
+      // Only a properly-calibrated display (one that has captured an empty-floor
+      // reference) is allowed to save. This prevents a stray/extra display page
+      // from writing a junk entry to the gallery on the same capture broadcast.
       const saveStatus = document.getElementById("saveStatus");
+      if (!bg) {
+        saveStatus.textContent =
+          "⚠ No empty-floor reference on this device — not saved. Run Setup → Capture empty floor.";
+        return;
+      }
       saveStatus.textContent = "Saving to gallery…";
       saveResult(lastResult)
         .then(() => { saveStatus.textContent = "Saved to gallery ✓"; })
