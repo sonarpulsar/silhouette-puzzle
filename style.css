@@ -183,7 +183,7 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .gal-head span { color: var(--muted); font-size: 0.9rem; }
 .gal-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 .gal-row figure { margin: 0; text-align: center; }
@@ -263,14 +263,18 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .result-title { font-size: 2.2rem; font-weight: 700; margin-bottom: 2vh; }
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2vh 2vw;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2vw;
+  width: 66vw;            /* leaves clear space at both edges for the QR codes */
+  max-width: 1150px;
+  margin: 0 auto;
   justify-items: center;
 }
-.result-grid figure { margin: 0; text-align: center; }
+.result-grid figure { margin: 0; text-align: center; width: 100%; }
 .result-grid img, .result-grid canvas {
-  width: min(40vh, 42vw);
-  height: min(40vh, 42vw);
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 72vh;
   object-fit: contain;
   background: #fff;
   border-radius: 10px;

@@ -46,8 +46,7 @@
     <div class="result-title" id="resultTitle"></div>
     <div class="result-grid">
       <figure><img id="rColor" alt="colour" /><figcaption>The puzzle</figcaption></figure>
-      <figure><canvas id="rPuzzleSil"></canvas><figcaption>Puzzle silhouette</figcaption></figure>
-      <figure><canvas id="rRaw"></canvas><figcaption>Your bodies</figcaption></figure>
+      <figure><canvas id="rBlend"></canvas><figcaption>Puzzle + bodies</figcaption></figure>
       <figure><canvas id="rBodySil"></canvas><figcaption>Your silhouette</figcaption></figure>
     </div>
     <div class="hint" id="saveStatus"></div>
@@ -261,7 +260,7 @@
     const refThumb = document.getElementById("refThumb");
     let current = null; // { file, name, silCanvas }
     let taskLoop = null;
-    const GHOST_ALPHA = 0.4;
+    const GHOST_ALPHA = 0.5; // 50/50 blend, matched between the live overlay and the saved image
 
     async function startTask(file, name) {
       taskName.textContent = name;
@@ -314,13 +313,15 @@
       }
       stopTask();
 
-      // Puzzle silhouette on white (for the result panel + saving).
-      const puzzleSil = document.createElement("canvas");
-      puzzleSil.width = puzzleSil.height = SIZE;
-      const pctx = puzzleSil.getContext("2d");
-      pctx.fillStyle = "#fff";
-      pctx.fillRect(0, 0, SIZE, SIZE);
-      pctx.drawImage(current.silCanvas, 0, 0, SIZE, SIZE);
+      // Blend = captured bodies + translucent target silhouette,
+      // i.e. exactly the overlay that was projected while solving.
+      const blend = document.createElement("canvas");
+      blend.width = blend.height = SIZE;
+      const bx = blend.getContext("2d");
+      bx.drawImage(raw, 0, 0);
+      bx.globalAlpha = GHOST_ALPHA;
+      bx.drawImage(current.silCanvas, 0, 0, SIZE, SIZE);
+      bx.globalAlpha = 1;
 
       // Body silhouette via background subtraction.
       const bg = await loadBackground(SIZE);
@@ -328,7 +329,7 @@
         ? makeBodySilhouette(raw, bg, { threshold: CAMERA.calib.threshold, blur: 4 })
         : blankWhite(SIZE);
 
-      lastResult = { name: current.name, colorFile: current.file, puzzleSil, raw, bodySil };
+      lastResult = { name: current.name, colorFile: current.file, blend, bodySil };
       showResult(lastResult);
 
       // Only a properly-calibrated display (one that has captured an empty-floor
@@ -358,8 +359,7 @@
     function showResult(r) {
       document.getElementById("resultTitle").textContent = r.name;
       document.getElementById("rColor").src = r.colorFile;
-      drawInto("rPuzzleSil", r.puzzleSil);
-      drawInto("rRaw", r.raw);
+      drawInto("rBlend", r.blend);
       drawInto("rBodySil", r.bodySil);
       show("result");
     }

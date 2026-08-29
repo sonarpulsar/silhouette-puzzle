@@ -11,7 +11,9 @@ function slugify(s) {
     .toLowerCase() || "puzzle";
 }
 
-// r = { name, colorFile, puzzleSil(canvas), raw(canvas), bodySil(canvas) }
+// r = { name, colorFile, blend(canvas), bodySil(canvas) }
+// We keep 3 images: colour puzzle, puzzle+bodies blend, body silhouette.
+// The blend is stored in the existing `body_raw_url` column (no schema change).
 async function saveResult(r) {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const folder = `${stamp}_${slugify(r.name)}`;
@@ -19,8 +21,7 @@ async function saveResult(r) {
   const colorBlob = await (await fetch(r.colorFile)).blob();
   const files = [
     ["color.png", colorBlob],
-    ["puzzle_sil.png", await canvasToBlob(r.puzzleSil, "image/png")],
-    ["body_raw.jpg", await canvasToBlob(r.raw, "image/jpeg", 0.9)],
+    ["blend.jpg", await canvasToBlob(r.blend, "image/jpeg", 0.9)],
     ["body_sil.png", await canvasToBlob(r.bodySil, "image/png")],
   ];
 
@@ -37,8 +38,7 @@ async function saveResult(r) {
   const { error: dbErr } = await supabaseClient.from("captures").insert({
     puzzle_name: r.name,
     color_url: urls["color.png"],
-    puzzle_sil_url: urls["puzzle_sil.png"],
-    body_raw_url: urls["body_raw.jpg"],
+    body_raw_url: urls["blend.jpg"], // holds the blend now
     body_sil_url: urls["body_sil.png"],
   });
   if (dbErr) throw dbErr;
