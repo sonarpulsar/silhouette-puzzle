@@ -62,7 +62,51 @@ function makeBodySilhouette(frameCanvas, bgCanvas, { threshold = 45, blur = 4 } 
     fd[i + 3] = 255;
   }
   octx.putImageData(fin, 0, 0);
+
+  // 4) Fill interior holes (e.g. pale clothing that matched the floor).
+  fillHoles(out);
   return out;
+}
+
+// Fills any white region that is fully enclosed by black (i.e. not connected to
+// the image border) with black. Leaves the outside background white.
+function fillHoles(canvas) {
+  const size = canvas.width;
+  const ctx = canvas.getContext("2d");
+  const img = ctx.getImageData(0, 0, size, size);
+  const d = img.data;
+  const N = size * size;
+
+  const isBg = new Uint8Array(N); // 1 = white (background/hole candidate)
+  for (let i = 0; i < N; i++) isBg[i] = d[i * 4] > 127 ? 1 : 0;
+
+  const reached = new Uint8Array(N); // white connected to the border = real outside
+  const stack = [];
+  const seed = (x, y) => {
+    const idx = y * size + x;
+    if (isBg[idx] && !reached[idx]) { reached[idx] = 1; stack.push(idx); }
+  };
+  for (let x = 0; x < size; x++) { seed(x, 0); seed(x, size - 1); }
+  for (let y = 0; y < size; y++) { seed(0, y); seed(size - 1, y); }
+
+  while (stack.length) {
+    const idx = stack.pop();
+    const x = idx % size;
+    const y = (idx - x) / size;
+    if (x > 0)        { const n = idx - 1;    if (isBg[n] && !reached[n]) { reached[n] = 1; stack.push(n); } }
+    if (x < size - 1) { const n = idx + 1;    if (isBg[n] && !reached[n]) { reached[n] = 1; stack.push(n); } }
+    if (y > 0)        { const n = idx - size; if (isBg[n] && !reached[n]) { reached[n] = 1; stack.push(n); } }
+    if (y < size - 1) { const n = idx + size; if (isBg[n] && !reached[n]) { reached[n] = 1; stack.push(n); } }
+  }
+
+  for (let i = 0; i < N; i++) {
+    if (isBg[i] && !reached[i]) { // enclosed white -> fill black
+      d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = 0;
+      d[i * 4 + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
 }
 
 // A plain white canvas (used if no background was captured yet).
