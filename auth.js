@@ -12,9 +12,9 @@
   overlay.id = "auth-overlay";
   overlay.innerHTML = `
     <form id="auth-form">
-      <div class="auth-title">🔒 Enter password</div>
+      <div class="auth-title">🔒 Passwort eingeben</div>
       <input type="password" id="auth-input" autocomplete="current-password" autofocus />
-      <button type="submit">Unlock</button>
+      <button type="submit">Entsperren</button>
       <div class="auth-err" id="auth-err"></div>
     </form>`;
 
@@ -43,7 +43,7 @@
         try { localStorage.setItem(KEY, APP_PASSWORD); } catch (e2) {}
         overlay.remove();
       } else {
-        err.textContent = "Wrong password";
+        err.textContent = "Falsches Passwort";
         input.value = "";
         input.focus();
       }

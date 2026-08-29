@@ -1,33 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Control — Silhouette Puzzle</title>
+  <title>Steuerung — Silhouetten-Puzzle</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="wrap">
     <!-- ===== Puzzle chooser ===== -->
     <div id="chooser">
-      <h1><span id="status-dot"></span>Choose a puzzle
-        <button class="link-btn" onclick="openAdmin()">Manage gallery</button>
+      <h1><span id="status-dot"></span>Wähle ein Puzzle
+        <button class="link-btn" onclick="openAdmin()">Galerie verwalten</button>
       </h1>
-      <p class="sub">Tap a puzzle, then press <b>Launch</b> to show it on the projector.</p>
+      <p class="sub">Tippe auf ein Puzzle und drücke dann <b>Start</b>, um es auf dem Projektor zu zeigen.</p>
       <div id="grid" class="grid"></div>
       <div class="controlbar">
-        <button class="btn primary" id="launchBtn" disabled onclick="launch()">▶ Launch</button>
-        <button class="btn" onclick="ch.send('capture')">📸 Capture</button>
-        <button class="btn" onclick="ch.send('next')">⏭ Next</button>
+        <button class="btn primary" id="launchBtn" disabled onclick="launch()">▶ Start</button>
+        <button class="btn" onclick="ch.send('capture')">📸 Aufnahme</button>
+        <button class="btn" onclick="ch.send('next')">⏭ Weiter</button>
       </div>
     </div>
 
     <!-- ===== Gallery admin ===== -->
     <div id="admin" class="hidden">
-      <h1>Manage gallery
-        <button class="link-btn" onclick="closeAdmin()">← Back to puzzles</button>
+      <h1>Galerie verwalten
+        <button class="link-btn" onclick="closeAdmin()">← Zurück zu den Puzzles</button>
       </h1>
-      <p class="sub" id="adminSub">Loading…</p>
+      <p class="sub" id="adminSub">Lädt…</p>
       <div id="adminList"></div>
     </div>
   </div>
@@ -80,31 +80,31 @@
 
     async function loadAdmin() {
       adminList.innerHTML = "";
-      adminSub.textContent = "Loading…";
+      adminSub.textContent = "Lädt…";
       const { data, error } = await supabaseClient
         .from("captures").select("*").order("created_at", { ascending: false });
       if (error) { adminSub.textContent = "⚠ " + error.message; return; }
-      if (!data.length) { adminSub.textContent = "Gallery is empty."; return; }
-      adminSub.textContent = data.length + " item" + (data.length > 1 ? "s" : "");
+      if (!data.length) { adminSub.textContent = "Galerie ist leer."; return; }
+      adminSub.textContent = data.length + (data.length === 1 ? " Eintrag" : " Einträge");
 
       data.forEach((c) => {
-        const when = new Date(c.created_at).toLocaleString();
+        const when = new Date(c.created_at).toLocaleString("de-DE");
         const row = document.createElement("div");
         row.className = "admin-row";
         row.innerHTML = `
           <img src="${c.color_url}" />
           <img src="${c.body_sil_url}" />
-          <div class="admin-meta"><b>${c.puzzle_name || "Untitled"}</b><span>${when}</span></div>
-          <button class="del-btn">🗑 Delete</button>`;
+          <div class="admin-meta"><b>${c.puzzle_name || "Ohne Titel"}</b><span>${when}</span></div>
+          <button class="del-btn">🗑 Löschen</button>`;
         row.querySelector(".del-btn").onclick = () => deleteCapture(c, row);
         adminList.appendChild(row);
       });
     }
 
     async function deleteCapture(c, row) {
-      if (!confirm("Delete this creation permanently?")) return;
+      if (!confirm("Dieses Werk endgültig löschen?")) return;
       const btn = row.querySelector(".del-btn");
-      btn.disabled = true; btn.textContent = "Deleting…";
+      btn.disabled = true; btn.textContent = "Löscht…";
       try {
         const paths = [c.color_url, c.puzzle_sil_url, c.body_raw_url, c.body_sil_url]
           .map(pathFromUrl).filter(Boolean);
@@ -113,8 +113,8 @@
         if (error) throw error;
         row.remove();
       } catch (e) {
-        btn.disabled = false; btn.textContent = "🗑 Delete";
-        alert("Delete failed: " + e.message);
+        btn.disabled = false; btn.textContent = "🗑 Löschen";
+        alert("Löschen fehlgeschlagen: " + e.message);
       }
     }
   </script>

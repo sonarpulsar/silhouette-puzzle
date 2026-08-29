@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gallery — Silhouette Puzzle</title>
+  <title>Galerie — Silhouetten-Puzzle</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="wrap">
-    <h1>Gallery</h1>
-    <p class="sub" id="galSub">Loading…</p>
+    <h1>Galerie</h1>
+    <p class="sub" id="galSub">Lädt…</p>
     <div id="gallery"></div>
   </div>
 
@@ -27,25 +27,25 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        galSub.textContent = "⚠ Could not load: " + error.message;
+        galSub.textContent = "⚠ Konnte nicht geladen werden: " + error.message;
         return;
       }
       if (!data.length) {
-        galSub.textContent = "No creations saved yet.";
+        galSub.textContent = "Noch keine Werke gespeichert.";
         return;
       }
-      galSub.textContent = data.length + " creation" + (data.length > 1 ? "s" : "");
+      galSub.textContent = data.length + (data.length === 1 ? " Werk" : " Werke");
 
       data.forEach((c) => {
-        const when = new Date(c.created_at).toLocaleString();
+        const when = new Date(c.created_at).toLocaleString("de-DE");
         const card = document.createElement("div");
         card.className = "gal-card";
         card.innerHTML = `
-          <div class="gal-head"><b>${c.puzzle_name || "Untitled"}</b><span>${when}</span></div>
+          <div class="gal-head"><b>${c.puzzle_name || "Ohne Titel"}</b><span>${when}</span></div>
           <div class="gal-row">
             <figure><img src="${c.color_url}" /><figcaption>Puzzle</figcaption></figure>
-            <figure><img src="${c.body_raw_url}" /><figcaption>Puzzle + bodies</figcaption></figure>
-            <figure><img src="${c.body_sil_url}" /><figcaption>Body silhouette</figcaption></figure>
+            <figure><img src="${c.body_raw_url}" /><figcaption>Puzzle + Körper</figcaption></figure>
+            <figure><img src="${c.body_sil_url}" /><figcaption>Körper-Silhouette</figcaption></figure>
           </div>`;
         gallery.appendChild(card);
       });

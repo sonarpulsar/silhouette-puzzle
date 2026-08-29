@@ -1,24 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Display — Silhouette Puzzle</title>
+  <title>Anzeige — Silhouetten-Puzzle</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- ============ IDLE ============ -->
   <div class="stage screen" id="idle">
-    <div class="label"><span id="status-dot"></span>Projector display</div>
-    <div class="big">Waiting for a puzzle…</div>
-    <button class="mini-btn" onclick="openSetup()">⚙ Setup camera</button>
+    <div class="label"><span id="status-dot"></span>Projektor-Anzeige</div>
+    <div class="big">Warte auf ein Puzzle…</div>
+    <button class="mini-btn" onclick="openSetup()">⚙ Kamera einrichten</button>
     <div class="hint" id="idleHint"></div>
   </div>
 
   <!-- ============ SETUP / CALIBRATION ============ -->
   <div class="stage screen hidden" id="setup">
-    <h2 class="setup-title">Camera setup</h2>
-    <p class="sub">Drag the box over the 3×3 m floor area. Use the corner to resize.</p>
+    <h2 class="setup-title">Kamera-Einrichtung</h2>
+    <p class="sub">Ziehe den Rahmen über den 3×3 m Bodenbereich. Zum Ändern der Größe die Ecke ziehen.</p>
 
     <div class="calib-stage" id="calibStage">
       <video id="calVideo" playsinline muted></video>
@@ -26,23 +26,23 @@
     </div>
 
     <div class="slider-row">
-      <label>Camera</label>
+      <label>Kamera</label>
       <select id="camSelect" onchange="switchCamera(this.value)"></select>
     </div>
 
     <div class="setup-controls">
-      <button class="mini-btn" onclick="toggleFlip()">↔ Flip: <span id="flipState">off</span></button>
-      <button class="mini-btn" onclick="rotate90()">⟳ Rotate: <span id="rotState">0°</span></button>
-      <button class="mini-btn" onclick="grabBackground()">📷 Capture empty floor</button>
-      <button class="mini-btn primary" onclick="closeSetup()">✓ Save &amp; close</button>
+      <button class="mini-btn" onclick="toggleFlip()">↔ Spiegeln: <span id="flipState">aus</span></button>
+      <button class="mini-btn" onclick="rotate90()">⟳ Drehen: <span id="rotState">0°</span></button>
+      <button class="mini-btn" onclick="grabBackground()">📷 Leeren Boden aufnehmen</button>
+      <button class="mini-btn primary" onclick="closeSetup()">✓ Speichern &amp; schließen</button>
     </div>
     <div class="slider-row">
-      <label>Sensitivity <span id="thVal"></span></label>
+      <label>Empfindlichkeit <span id="thVal"></span></label>
       <input type="range" id="thSlider" min="5" max="100" step="1" oninput="setThreshold(this.value)" />
-      <button class="mini-btn" onclick="togglePreviewMode()">View: <span id="previewModeLabel">live</span></button>
+      <button class="mini-btn" onclick="togglePreviewMode()">Ansicht: <span id="previewModeLabel">Ausgabe</span></button>
     </div>
     <div class="hint" id="setupHint"></div>
-    <div class="preview-label" id="previewLabel">Output preview — what the audience sees (flip &amp; rotate apply here)</div>
+    <div class="preview-label" id="previewLabel">Vorschau — was das Publikum sieht (Spiegeln &amp; Drehen wirken hier)</div>
     <canvas id="calPreview" class="preview-canvas" width="360" height="360"></canvas>
   </div>
 
@@ -50,9 +50,9 @@
   <div class="stage screen hidden" id="result">
     <div class="result-title" id="resultTitle"></div>
     <div class="result-grid">
-      <figure><img id="rColor" alt="colour" /><figcaption>The puzzle</figcaption></figure>
-      <figure><canvas id="rBlend"></canvas><figcaption>Puzzle + bodies</figcaption></figure>
-      <figure><canvas id="rBodySil"></canvas><figcaption>Your silhouette</figcaption></figure>
+      <figure><img id="rColor" alt="Farbe" /><figcaption>Das Puzzle</figcaption></figure>
+      <figure><canvas id="rBlend"></canvas><figcaption>Puzzle + Körper</figcaption></figure>
+      <figure><canvas id="rBodySil"></canvas><figcaption>Eure Silhouette</figcaption></figure>
     </div>
     <div class="hint" id="saveStatus"></div>
   </div>
@@ -62,19 +62,19 @@
     <div class="task-name" id="taskName"></div>
     <div class="task-canvas-wrap">
       <canvas id="taskCanvas" width="720" height="720"></canvas>
-      <img class="ref-thumb" id="refThumb" alt="target" />
+      <img class="ref-thumb" id="refThumb" alt="Ziel" />
     </div>
-    <div class="hint">Arrange your bodies to fill the ghost shape — curator presses Capture when ready.</div>
+    <div class="hint">Formt mit euren Körpern die Silhouette — die Aufnahme erfolgt, wenn ihr bereit seid.</div>
   </div>
 
   <!-- ============ QR codes (always visible, both edges) ============ -->
   <div class="qr-badge qr-left">
     <div class="qr-box" id="qrLeft"></div>
-    <div class="qr-cap">Scan to open gallery</div>
+    <div class="qr-cap">Scannen, um die Galerie zu öffnen</div>
   </div>
   <div class="qr-badge qr-right">
     <div class="qr-box" id="qrRight"></div>
-    <div class="qr-cap">Scan to open gallery</div>
+    <div class="qr-cap">Scannen, um die Galerie zu öffnen</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
@@ -103,8 +103,8 @@
 
     const idleHint = document.getElementById("idleHint");
     idleHint.textContent = CAMERA.hasBackground()
-      ? "Camera calibrated ✓"
-      : "Not yet calibrated — press Setup camera before the show.";
+      ? "Kamera kalibriert ✓"
+      : "Noch nicht kalibriert — richte die Kamera vor der Vorstellung ein.";
 
     // ---------- SETUP SCREEN ----------
     const calVideo = document.getElementById("calVideo");
@@ -115,7 +115,7 @@
 
     async function openSetup() {
       show("setup");
-      setupHint.textContent = "Starting camera…";
+      setupHint.textContent = "Kamera wird gestartet…";
       try {
         await CAMERA.ensure(calVideo);
         setupHint.textContent = "";
@@ -125,8 +125,8 @@
         startPreviewLoop();
       } catch (e) {
         setupHint.textContent =
-          "⚠ Could not open the camera: " + e.message +
-          ". Check the C270 is plugged in and click Allow on the camera prompt.";
+          "⚠ Kamera konnte nicht geöffnet werden: " + e.message +
+          ". Prüfe, ob die Kamera angeschlossen ist, und klicke bei der Abfrage auf „Zulassen“.";
       }
     }
 
@@ -134,8 +134,8 @@
       stopPreviewLoop();
       saveCalib(CAMERA.calib);
       idleHint.textContent = CAMERA.hasBackground()
-        ? "Camera calibrated ✓"
-        : "Calibrated (crop saved). Tip: also Capture empty floor.";
+        ? "Kamera kalibriert ✓"
+        : "Kalibriert (Ausschnitt gespeichert). Tipp: auch den leeren Boden aufnehmen.";
       show("idle");
     }
 
@@ -160,15 +160,15 @@
 
     async function switchCamera(deviceId) {
       stopPreviewLoop();
-      setupHint.textContent = "Switching camera…";
+      setupHint.textContent = "Kamera wird gewechselt…";
       try {
         await CAMERA.switchTo(deviceId, calVideo);
         layoutBox();
         startPreviewLoop();
         setupHint.textContent =
-          "Camera changed — re-check the crop box and press “Capture empty floor” again.";
+          "Kamera gewechselt — prüfe den Ausschnitt und nimm den leeren Boden erneut auf.";
       } catch (e) {
-        setupHint.textContent = "⚠ Could not switch camera: " + e.message;
+        setupHint.textContent = "⚠ Kamera konnte nicht gewechselt werden: " + e.message;
       }
     }
 
@@ -183,7 +183,7 @@
       refreshToggleLabels();
     }
     function refreshToggleLabels() {
-      document.getElementById("flipState").textContent = CAMERA.calib.flipH ? "on" : "off";
+      document.getElementById("flipState").textContent = CAMERA.calib.flipH ? "an" : "aus";
       document.getElementById("rotState").textContent = CAMERA.calib.rotate + "°";
       const th = CAMERA.calib.threshold;
       document.getElementById("thSlider").value = th;
@@ -191,7 +191,7 @@
     }
     async function grabBackground() {
       const url = CAMERA.captureBackground(SIZE);
-      setupHint.textContent = url ? "Empty floor captured ✓" : "Camera not ready yet.";
+      setupHint.textContent = url ? "Leerer Boden aufgenommen ✓" : "Kamera noch nicht bereit.";
       if (url) previewBg = await loadBackground(SIZE); // refresh for silhouette preview
     }
     function setThreshold(v) {
@@ -234,21 +234,21 @@
       if (previewMode === "output") {
         previewBg = await loadBackground(SIZE);
         if (!previewBg) {
-          setupHint.textContent = "Capture the empty floor first to preview the silhouette.";
+          setupHint.textContent = "Nimm zuerst den leeren Boden auf, um die Silhouette in der Vorschau zu sehen.";
           return;
         }
         previewMode = "silhouette";
-        setupHint.textContent = "Silhouette preview: adjust Sensitivity so only bodies are black.";
+        setupHint.textContent = "Silhouetten-Vorschau: stelle die Empfindlichkeit so ein, dass nur Körper schwarz sind.";
       } else {
         previewMode = "output";
         setupHint.textContent = "";
       }
       document.getElementById("previewModeLabel").textContent =
-        previewMode === "output" ? "live" : "silhouette";
+        previewMode === "output" ? "Ausgabe" : "Silhouette";
       document.getElementById("previewLabel").textContent =
         previewMode === "output"
-          ? "Output preview — what the audience sees (flip & rotate apply here)"
-          : "Silhouette preview — stand on the floor and tune Sensitivity";
+          ? "Vorschau — was das Publikum sieht (Spiegeln & Drehen wirken hier)"
+          : "Silhouetten-Vorschau — stell dich auf den Boden und stelle die Empfindlichkeit ein";
     }
 
     // Position the crop box from calib fractions over the displayed video.
@@ -313,7 +313,7 @@
       try {
         await CAMERA.ensure(document.createElement("video")); // ensure stream exists
       } catch (e) {
-        taskName.textContent = name + "  (camera unavailable — run Setup)";
+        taskName.textContent = name + "  (Kamera nicht verfügbar — Einrichtung starten)";
       }
       runTaskLoop();
     }
@@ -349,7 +349,7 @@
       if (!current) return;
       const raw = document.createElement("canvas");
       if (!CAMERA.draw(raw, SIZE)) {
-        taskName.textContent = current.name + "  (camera not ready)";
+        taskName.textContent = current.name + "  (Kamera nicht bereit)";
         return;
       }
       stopTask();
@@ -379,14 +379,14 @@
       const saveStatus = document.getElementById("saveStatus");
       if (!bg) {
         saveStatus.textContent =
-          "⚠ No empty-floor reference on this device — not saved. Run Setup → Capture empty floor.";
+          "⚠ Kein Referenzbild des leeren Bodens auf diesem Gerät — nicht gespeichert. Einrichtung → Leeren Boden aufnehmen.";
         return;
       }
-      saveStatus.textContent = "Saving to gallery…";
+      saveStatus.textContent = "Wird in der Galerie gespeichert…";
       saveResult(lastResult)
-        .then(() => { saveStatus.textContent = "Saved to gallery ✓"; })
+        .then(() => { saveStatus.textContent = "In der Galerie gespeichert ✓"; })
         .catch((e) => {
-          saveStatus.textContent = "⚠ Save failed: " + e.message;
+          saveStatus.textContent = "⚠ Speichern fehlgeschlagen: " + e.message;
           console.error(e);
         });
     }
@@ -420,7 +420,7 @@
           break;
         case "recalibrate": {
           const url = CAMERA.captureBackground(SIZE);
-          idleHint.textContent = url ? "Empty floor re-captured ✓" : "Start the camera first (Setup).";
+          idleHint.textContent = url ? "Leerer Boden neu aufgenommen ✓" : "Starte zuerst die Kamera (Einrichtung).";
           break;
         }
       }
