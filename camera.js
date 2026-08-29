@@ -24,6 +24,19 @@ const CAMERA = {
   stream: null,
   started: false,
   calib: loadCalib(),
+  camId: null, // currently selected camera (session only, not persisted)
+
+  // Opens a stream (optionally for a specific camera) and attaches it.
+  async _open(videoEl) {
+    if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
+    const video = { width: { ideal: 1280 }, height: { ideal: 720 } };
+    if (this.camId) video.deviceId = { exact: this.camId };
+    this.stream = await navigator.mediaDevices.getUserMedia({ video, audio: false });
+    this.video = videoEl;
+    videoEl.srcObject = this.stream;
+    await videoEl.play();
+    this.started = true;
+  },
 
   // Starts the webcam once and attaches it to a <video> element.
   async ensure(videoEl) {
@@ -36,14 +49,27 @@ const CAMERA = {
       }
       return;
     }
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false,
-    });
-    this.video = videoEl;
-    videoEl.srcObject = this.stream;
-    await videoEl.play();
-    this.started = true;
+    await this._open(videoEl);
+  },
+
+  // Lists available cameras. Labels are only filled in after permission is granted.
+  async listCameras() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices
+      .filter((d) => d.kind === "videoinput")
+      .map((d, i) => ({ deviceId: d.deviceId, label: d.label || "Camera " + (i + 1) }));
+  },
+
+  // Switches to a chosen camera and re-attaches to the given <video>.
+  async switchTo(deviceId, videoEl) {
+    this.camId = deviceId || null;
+    await this._open(videoEl || this.video);
+  },
+
+  // The deviceId of the currently active stream (to preselect the dropdown).
+  currentDeviceId() {
+    const track = this.stream && this.stream.getVideoTracks()[0];
+    return track ? track.getSettings().deviceId : null;
   },
 
   // Draws the calibrated (cropped + flipped + rotated) square into `dest`.

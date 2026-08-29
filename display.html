@@ -25,6 +25,11 @@
       <div class="crop-box" id="cropBox"><div class="handle" id="cropHandle"></div></div>
     </div>
 
+    <div class="slider-row">
+      <label>Camera</label>
+      <select id="camSelect" onchange="switchCamera(this.value)"></select>
+    </div>
+
     <div class="setup-controls">
       <button class="mini-btn" onclick="toggleFlip()">↔ Flip: <span id="flipState">off</span></button>
       <button class="mini-btn" onclick="rotate90()">⟳ Rotate: <span id="rotState">0°</span></button>
@@ -92,6 +97,8 @@
     function show(name) {
       Object.values(screens).forEach((s) => s.classList.add("hidden"));
       screens[name].classList.remove("hidden");
+      // Hide the edge QR codes only on the Setup screen (operator config).
+      document.body.classList.toggle("setup-mode", name === "setup");
     }
 
     const idleHint = document.getElementById("idleHint");
@@ -114,6 +121,7 @@
         setupHint.textContent = "";
         layoutBox();
         refreshToggleLabels();
+        populateCameras();
         startPreviewLoop();
       } catch (e) {
         setupHint.textContent =
@@ -129,6 +137,39 @@
         ? "Camera calibrated ✓"
         : "Calibrated (crop saved). Tip: also Capture empty floor.";
       show("idle");
+    }
+
+    // Fill the camera dropdown (labels appear only after permission is granted).
+    async function populateCameras() {
+      const sel = document.getElementById("camSelect");
+      try {
+        const cams = await CAMERA.listCameras();
+        const current = CAMERA.currentDeviceId();
+        sel.innerHTML = "";
+        cams.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.deviceId;
+          opt.textContent = c.label;
+          if (c.deviceId === current) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error("Could not list cameras:", e);
+      }
+    }
+
+    async function switchCamera(deviceId) {
+      stopPreviewLoop();
+      setupHint.textContent = "Switching camera…";
+      try {
+        await CAMERA.switchTo(deviceId, calVideo);
+        layoutBox();
+        startPreviewLoop();
+        setupHint.textContent =
+          "Camera changed — re-check the crop box and press “Capture empty floor” again.";
+      } catch (e) {
+        setupHint.textContent = "⚠ Could not switch camera: " + e.message;
+      }
     }
 
     function toggleFlip() {
